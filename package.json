@@ -1,0 +1,18 @@
+{
+  "name": "ec.rancher-blue-green-deploy",
+  "version": "0.0.1",
+  "description": "Blue-Green deployment for rancher with zero downtime. By entrecode.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://scherzinger@stash.entrecode.de/scm/node/ec.rancher-blue-green-deploy.git"
+  },
+  "keywords": [
+    "rancher"
+  ],
+  "author": "Simon Scherzinger <scherzinger@entrecode.de>",
+  "license": "ISC"
+}
