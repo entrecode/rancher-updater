@@ -1,0 +1,8 @@
+{{balancerName}}:
+  expose:
+  - 7972:7972
+  tty: true
+  image: rancher/load-balancer-service
+  links:
+  - {{serviceName}}-{{version}}:{{serviceName}}-{{version}}
+  stdin_open: true
