@@ -9,7 +9,7 @@ const Bluebird = require('bluebird');
 
 argv.version_ = argv.v_ = argv.v.split('.').join('-');
 if (argv.n) {
-  argv.version_ = argv.v_ += `${argv.v_}+${argv.n}`;
+  argv.version_ = argv.v_ = `${argv.v_}+${argv.n}`;
 }
 
 argv.accessKey = argv.accessKey || process.env.RANCHER_ACCESS_KEY;
