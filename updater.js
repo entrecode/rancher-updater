@@ -12,10 +12,9 @@ argv.accessKey = argv.accessKey || process.env.RANCHER_ACCESS_KEY;
 argv.secretKey = argv.secretKey || process.env.RANCHER_SECRET_KEY;
 
 if (!argv.accessKey || !argv.secretKey) {
-  process.stdout.write('Please provide access key and secret key\n');
-  process.exit(1);
+  throw new Error('Please provide access key and secret key\n');
 } else {
-  process.stdout.write(`Using access key ${argv.accessKey}\n`);
+  console.info(`Using access key ${argv.accessKey}\n`);
 }
 
 api.init(argv.accessKey, argv.secretKey);
@@ -27,11 +26,6 @@ const tpls = {
   rancherBalancer: fs.readFileSync(argv.rancherBalancer, 'utf-8'),
 };
 const yamls = {};
-
-function exit(err) {
-  console.error(err.stack);
-  process.exit(1);
-}
 
 function promiseWhile(condition, action) {
   const resolver = Bluebird.defer();
@@ -58,6 +52,7 @@ let oldVersion_;
 let oldVersion;
 
 // get stack in environment
+console.info('Reading initial stack info');
 api.getStack(argv.e, argv.s)
 .then((s) => {
   stack = s;
@@ -66,6 +61,7 @@ api.getStack(argv.e, argv.s)
 .then((s) => {
   services = s;
 
+  console.info('Looking for services');
   oldService = services.data.find((service) => service.name.startsWith(`${argv.s}-`));
   oldVersion_ = oldService.name.split('-').slice(1).join('-');
   oldVersion = oldService.launchConfig.imageUuid.split(':')[2];
@@ -75,6 +71,9 @@ api.getStack(argv.e, argv.s)
     throw new Error(`New service name ${argv.s}-${argv.v_} already taken. Abort.`);
   }
 
+  console.info('Services and service names seem ok');
+
+  console.info('Creating templates');
   yamls.dockerService = tpls.dockerService
   .split('{{serviceName}}').join(argv.s)
   .split('{{version}}').join(argv.v_)
@@ -113,10 +112,15 @@ api.getStack(argv.e, argv.s)
     .split('{{balancerName}}').join(argv.b)
   );
 
+  console.info('New docker compose:\n', yamls.dockerService);
+  console.info('new rancher compose:\n', yamls.rancherService);
+
+  console.info('Creating service with new version');
   return Promise.resolve();
 })
 .then(() => composeBindings.updateStack(yamls.dockerService, yamls.rancherService))
 .then((updatedStack) => {
+  console.info('Stack updated with new version. Waiting to become healthy');
   stack = updatedStack;
   let timeout = 60000;
   return promiseWhile(
@@ -134,6 +138,8 @@ api.getStack(argv.e, argv.s)
     throw new Error('Service did not become healthy during the requested timeout.');
   }
 
+  console.info('Stack is reporting healthy state');
+  console.info('Switching load balancer');
   return composeBindings.updateStack(yamls.dockerBalancerNew, yamls.rancherBalancerNew);
 })
 .then((updatedStack) => {
@@ -154,22 +160,25 @@ api.getStack(argv.e, argv.s)
     throw new Error('Load balancer did not become healthy during the requested timeout.');
   }
 
+  console.info('Stack is reporting healty state');
   // TODO we need healthchecks for new service here.
 
-  return Bluebird.delay(10000).then(() => composeBindings.removeService(`${argv.s}-${oldVersion_}`));
+  console.info('Removing old service');
+  return Bluebird.delay(1000);
 })
-.then((s) => {
-  stack = s;
+.then(() => api.removeService(oldService))
+.then(() => {
   console.log(`Successfully upgraded to ${argv.v}.`);
   composeBindings.cleanup();
-  process.exit(0);
 })
 .catch(err => {
   composeBindings.cleanup();
   if (err.message !== 'Load balancer did not become healthy during the requested timeout.') {
-    return exit(err);
+    throw err;
   }
 
+  console.error(err.message);
+  console.info('Reverting load balancer back to old service');
   composeBindings.updateStack(yaml.dockerBalancerOld, yaml.rancherBalancerOld)
   .then((updatedStack) => {
     stack = updatedStack;
@@ -177,7 +186,7 @@ api.getStack(argv.e, argv.s)
     return promiseWhile(
       () => stack.healthState !== 'healthy' && timeout > 0,
       () => Bluebird.delay(1000)
-      .then(() =>api.getStack(argv.e, argv.s))
+      .then(() => api.getStack(argv.e, argv.s))
       .then((s) => {
         stack = s;
         timeout -= 1000;
@@ -189,7 +198,13 @@ api.getStack(argv.e, argv.s)
       throw new Error('Could not revert to old load balancer. PANIC!');
     }
 
-    exit(err);
+    throw new Error(`Could not upgrade to ${argv.s}-${argv.v}.`);
   })
-  .catch((err) => exit(err));
+  .catch((error) => {
+    throw error;
+  });
+})
+.catch((err) => {
+  console.error(err);
+  process.exit(1);
 });
