@@ -130,14 +130,14 @@ api.getStack(argv.e, argv.s)
 .then((updatedStack) => {
   console.info('Stack updated with new version. Waiting to become healthy');
   stack = updatedStack;
-  let timeout = 60000;
+  let timeout = 600000;
   return promiseWhile(
     () => stack.healthState !== 'healthy' && timeout > 0,
-    () => Bluebird.delay(2000)
+    () => Bluebird.delay(5000)
     .then(() =>api.getStack(argv.e, argv.s))
     .then((s) => {
       stack = s;
-      timeout -= 2000;
+      timeout -= 5000;
     })
   );
 })
@@ -152,14 +152,14 @@ api.getStack(argv.e, argv.s)
 })
 .then((updatedStack) => {
   stack = updatedStack;
-  let timeout = 30000;
+  let timeout = 60000;
   return promiseWhile(
     () => stack.healthState !== 'healthy' && timeout > 0,
-    () => Bluebird.delay(1000)
+    () => Bluebird.delay(2000)
     .then(() =>api.getStack(argv.e, argv.s))
     .then((s) => {
       stack = s;
-      timeout -= 1000;
+      timeout -= 2000;
     })
   );
 })
@@ -190,14 +190,14 @@ api.getStack(argv.e, argv.s)
   composeBindings.updateStack(yaml.dockerBalancerOld, yaml.rancherBalancerOld)
   .then((updatedStack) => {
     stack = updatedStack;
-    let timeout = 30000;
+    let timeout = 60000;
     return promiseWhile(
       () => stack.healthState !== 'healthy' && timeout > 0,
-      () => Bluebird.delay(1000)
+      () => Bluebird.delay(2000)
       .then(() => api.getStack(argv.e, argv.s))
       .then((s) => {
         stack = s;
-        timeout -= 1000;
+        timeout -= 2000;
       })
     );
   })
