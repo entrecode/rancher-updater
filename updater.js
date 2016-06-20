@@ -6,7 +6,11 @@ const api = require('./lib/rancher-api-v1');
 const composeBindings = require('./lib/rancher-compose-bindings');
 const argv = require('./lib/argv');
 const Bluebird = require('bluebird');
+
 argv.version_ = argv.v_ = argv.v.split('.').join('-');
+if (argv.n) {
+  argv.version_ = argv.v_ += argv.v_ + argv.n;
+}
 
 argv.accessKey = argv.accessKey || process.env.RANCHER_ACCESS_KEY;
 argv.secretKey = argv.secretKey || process.env.RANCHER_SECRET_KEY;
