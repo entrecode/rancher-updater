@@ -3,7 +3,7 @@
   upgrade_strategy:
     start_first: true
   health_check:
-    port: 7972
+    port: {{port}}
     interval: 5000
     recreate_on_quorum_strategy_config:
       quorum: 1

@@ -80,6 +80,7 @@ api.getStack(argv.e, argv.s)
   .split('{{versionDots}}').join(argv.v);
   yamls.rancherService = tpls.rancherService
   .split('{{serviceName}}').join(argv.s)
+  .split('{{port}}').join(argv.p)
   .split('{{version}}').join(argv.v_);
 
   yamls.dockerServiceOld = tpls.dockerService
@@ -88,12 +89,14 @@ api.getStack(argv.e, argv.s)
   .split('{{versionDots}}').join(oldVersion);
   yamls.rancherServiceOld = tpls.rancherService
   .split('{{serviceName}}').join(argv.s)
+  .split('{{port}}').join(argv.p)
   .split('{{version}}').join(oldVersion_);
 
   yamls.dockerBalancerNew = yamls.dockerService.concat(yamls.dockerServiceOld,
     tpls.dockerBalancer
     .split('{{balancerName}}').join(argv.b)
     .split('{{serviceName}}').join(argv.s)
+    .split('{{port}}').join(argv.p)
     .split('{{version}}').join(argv.v_)
   );
   yamls.rancherBalancerNew = yamls.rancherService.concat(yamls.rancherServiceOld,
@@ -105,6 +108,7 @@ api.getStack(argv.e, argv.s)
     tpls.dockerBalancer
     .split('{{balancerName}}').join(argv.b)
     .split('{{serviceName}}').join(argv.s)
+    .split('{{port}}').join(argv.p)
     .split('{{version}}').join(oldVersion_)
   );
   yamls.rancherBalancerOld = yamls.rancherService.concat(yamls.rancherServiceOld,

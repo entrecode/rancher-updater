@@ -1,6 +1,6 @@
 {{balancerName}}:
   expose:
-  - 7972:7972
+  - {{port}}:{{port}}
   tty: true
   image: rancher/load-balancer-service
   links:
