@@ -12,11 +12,29 @@ if (argv.n) {
   argv.version_ = argv.v_ = `${argv.v_}-build-${argv.n}`;
 }
 
+if (argv.e) {
+  if (!Array.isArray(argv.e)) {
+    argv.e = [argv.e];
+  }
+  argv.e = argv.e.map((e) => {
+    if (e.indexOf('=') === -1) {
+      console.error('Environment variables (-e) must be in format key=value.');
+      process.exit(1);
+    }
+
+    return e.split('=').join(': ');
+  });
+  argv.e = `\n    ${argv.e.join('\n    ')}`;
+} else {
+  argv.e = '';
+}
+
 argv.accessKey = argv.accessKey || process.env.RANCHER_ACCESS_KEY;
 argv.secretKey = argv.secretKey || process.env.RANCHER_SECRET_KEY;
 
 if (!argv.accessKey || !argv.secretKey) {
-  throw new Error('Please provide access key and secret key\n');
+  console.error('Please provide access key and secret key\n');
+  process.exit(1);
 } else {
   console.info(`Using access key ${argv.accessKey}\n`);
 }
@@ -57,7 +75,7 @@ let oldVersion;
 
 // get stack in environment
 console.info('Reading initial stack info');
-api.getStack(argv.e, argv.s)
+api.getStack(argv.env, argv.s)
 .then((s) => {
   stack = s;
   return api.getServices(stack);
@@ -81,7 +99,8 @@ api.getStack(argv.e, argv.s)
   yamls.dockerService = tpls.dockerService
   .split('{{serviceName}}').join(argv.s)
   .split('{{version}}').join(argv.v_)
-  .split('{{versionDots}}').join(argv.v);
+  .split('{{versionDots}}').join(argv.v)
+  .split('{{env}}').join(argv.e);
   yamls.rancherService = tpls.rancherService
   .split('{{serviceName}}').join(argv.s)
   .split('{{port}}').join(argv.p)
@@ -134,7 +153,7 @@ api.getStack(argv.e, argv.s)
   return promiseWhile(
     () => stack.healthState !== 'healthy' && timeout > 0,
     () => Bluebird.delay(5000)
-    .then(() =>api.getStack(argv.e, argv.s))
+    .then(() =>api.getStack(argv.env, argv.s))
     .then((s) => {
       stack = s;
       timeout -= 5000;
@@ -156,7 +175,7 @@ api.getStack(argv.e, argv.s)
   return promiseWhile(
     () => stack.healthState !== 'healthy' && timeout > 0,
     () => Bluebird.delay(2000)
-    .then(() =>api.getStack(argv.e, argv.s))
+    .then(() =>api.getStack(argv.env, argv.s))
     .then((s) => {
       stack = s;
       timeout -= 2000;
@@ -194,7 +213,7 @@ api.getStack(argv.e, argv.s)
     return promiseWhile(
       () => stack.healthState !== 'healthy' && timeout > 0,
       () => Bluebird.delay(2000)
-      .then(() => api.getStack(argv.e, argv.s))
+      .then(() => api.getStack(argv.env, argv.s))
       .then((s) => {
         stack = s;
         timeout -= 2000;

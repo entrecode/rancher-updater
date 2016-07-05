@@ -1,8 +1,6 @@
 {{serviceName}}-{{version}}:
-  environment:
+  environment:{{env}}
     NODE_ENV: stage
-    RDS_HOSTNAME: db
-    REDIS_ACTIVE: 'false'
   labels:
     io.rancher.container.pull_image: always
   tty: true
