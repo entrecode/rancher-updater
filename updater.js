@@ -1,32 +1,51 @@
 #!/usr/bin/env node
 'use strict';
 
-const fs = require('fs');
 const api = require('./lib/rancher-api-v1');
-const composeBindings = require('./lib/rancher-compose-bindings');
 const argv = require('./lib/argv');
 const Bluebird = require('bluebird');
+const composeBindings = require('./lib/rancher-compose-bindings');
+const fs = require('fs');
+const handlebars = require('handlebars');
 
-argv.version_ = argv.v_ = argv.v.split('.').join('-');
-if (argv.n) {
-  argv.version_ = argv.v_ = `${argv.v_}-build-${argv.n}`;
+function promiseWhile(condition, action) {
+  const resolver = Bluebird.defer();
+
+  const loop = () => {
+    if (!condition()) {
+      return resolver.resolve();
+    }
+    return Bluebird.cast(action())
+    .then(loop)
+    .catch(resolver.reject);
+  };
+
+  process.nextTick(loop);
+
+  return resolver.promise;
 }
 
-if (argv.e) {
-  if (!Array.isArray(argv.e)) {
-    argv.e = [argv.e];
+argv.serviceName = `${argv.service}-${argv.version.split('.').join('-')}`;
+if (argv.build) {
+  argv.serviceName += `-build-${argv.build}`;
+}
+
+if (argv.env) {
+  if (!Array.isArray(argv.env)) {
+    argv.env = [argv.env];
   }
-  argv.e = argv.e.map((e) => {
-    if (e.indexOf('=') === -1) {
-      console.error('Environment variables (-e) must be in format key=value.');
+
+  const envObj = {};
+  argv.env.map((env) => {
+    if (env.indexOf('=') === -1) {
+      console.error('Environment variables need to be in the format key=value');
       process.exit(1);
     }
-
-    return e.split('=').join(': ');
+    const split = env.split('=');
+    envObj[split[0]] = split[1];
+    return envObj;
   });
-  argv.e = `\n    ${argv.e.join('\n    ')}`;
-} else {
-  argv.e = '';
+  argv.e = argv.env = envObj;
 }
 
 argv.accessKey = argv.accessKey || process.env.RANCHER_ACCESS_KEY;
@@ -49,33 +68,18 @@ const tpls = {
 };
 const yamls = {};
 
-function promiseWhile(condition, action) {
-  const resolver = Bluebird.defer();
-
-  const loop = () => {
-    if (!condition()) {
-      return resolver.resolve();
-    }
-    return Bluebird.cast(action())
-    .then(loop)
-    .catch(resolver.reject);
-  };
-
-  process.nextTick(loop);
-
-  return resolver.promise;
-}
-
 let stack;
 let services;
 let oldService;
 let newService;
-let oldVersion_;
+let balancer;
+
+let oldServiceName;
 let oldVersion;
 
 // get stack in environment
 console.info('Reading initial stack info');
-api.getStack(argv.env, argv.s)
+api.getStack(argv.environment, argv.service)
 .then((s) => {
   stack = s;
   return api.getServices(stack);
@@ -84,68 +88,83 @@ api.getStack(argv.env, argv.s)
   services = s;
 
   console.info('Looking for services');
-  oldService = services.data.find((service) => service.name.startsWith(`${argv.s}-`));
-  oldVersion_ = oldService.name.split('-').slice(1).join('-');
-  oldVersion = oldService.launchConfig.imageUuid.split(':')[2];
+  oldService = services.data.find((service) => service.name.startsWith(`${argv.service}-`));
+  if (!oldService) {
+    console.error(`Old service name ${argv.service} not found. Abort.`);
+    process.exit(1);
+  }
 
-  newService = services.data.find((service) => service.name === `${argv.s}-${argv.v_}`);
+  balancer = services.data.find((service) => service.name === argv.balancer);
+  if (!balancer) {
+    console.error(`Balancer ${argv.balancer} not found. Abort.`);
+    process.exit(1);
+  }
+
+  newService = services.data.find((service) => service.name === argv.serviceName);
   if (newService) {
-    throw new Error(`New service name ${argv.s}-${argv.v_} already taken. Abort.`);
+    console.error(`New service name ${argv.serviceName} already taken. Abort.`);
+    process.exit(1);
   }
 
   console.info('Services and service names seem ok');
+  return Promise.resolve();
+})
+.then(() => {
+  console.info('Creating base templates');
 
-  console.info('Creating templates');
-  yamls.dockerService = tpls.dockerService
-  .split('{{serviceName}}').join(argv.s)
-  .split('{{version}}').join(argv.v_)
-  .split('{{versionDots}}').join(argv.v)
-  .split('{{env}}').join(argv.e);
-  yamls.rancherService = tpls.rancherService
-  .split('{{serviceName}}').join(argv.s)
-  .split('{{port}}').join(argv.p)
-  .split('{{version}}').join(argv.v_);
+  oldServiceName = oldService.name;
+  oldVersion = oldService.launchConfig.imageUuid.split(':')[2];
 
-  yamls.dockerServiceOld = tpls.dockerService
-  .split('{{serviceName}}').join(argv.s)
-  .split('{{version}}').join(oldVersion_)
-  .split('{{versionDots}}').join(oldVersion);
-  yamls.rancherServiceOld = tpls.rancherService
-  .split('{{serviceName}}').join(argv.s)
-  .split('{{port}}').join(argv.p)
-  .split('{{version}}').join(oldVersion_);
-
-  yamls.dockerBalancerNew = yamls.dockerService.concat(yamls.dockerServiceOld,
-    tpls.dockerBalancer
-    .split('{{balancerName}}').join(argv.b)
-    .split('{{serviceName}}').join(argv.s)
-    .split('{{port}}').join(argv.p)
-    .split('{{version}}').join(argv.v_)
+  // new
+  for (let file in tpls) {
+    if (tpls.hasOwnProperty(file)) {
+      const template = handlebars.compile(tpls[file]);
+      yamls[`${file}New`] = template(argv);
+    }
+  }
+  // old
+  console.info('Reading old config');
+  return api.exportConfig(stack, [oldService.id])
+  .then((res) => {
+    yamls.dockerServiceOld = res.dockerComposeConfig;
+    yamls.rancherServiceOld = res.rancherComposeConfig;
+    console.info('Old service config loaded');
+    return Promise.resolve();
+  });
+})
+.then(() => api.exportConfig(stack, [oldService.id, balancer.id])
+.then((res) => {
+  yamls.dockerBalancerOld = res.dockerComposeConfig;
+  yamls.rancherBalancerOld = res.rancherComposeConfig;
+  console.info('Old balancer config loaded');
+  return Promise.resolve();
+}))
+.then(() => {
+  yamls.dockerBalancerNew = yamls.dockerBalancerNew.concat(
+    yamls.dockerServiceOld,
+    yamls.dockerServiceNew
   );
-  yamls.rancherBalancerNew = yamls.rancherService.concat(yamls.rancherServiceOld,
-    tpls.rancherBalancer
-    .split('{{balancerName}}').join(argv.b)
-  );
-
-  yamls.dockerBalancerOld = yamls.dockerService.concat(yamls.dockerServiceOld,
-    tpls.dockerBalancer
-    .split('{{balancerName}}').join(argv.b)
-    .split('{{serviceName}}').join(argv.s)
-    .split('{{port}}').join(argv.p)
-    .split('{{version}}').join(oldVersion_)
-  );
-  yamls.rancherBalancerOld = yamls.rancherService.concat(yamls.rancherServiceOld,
-    tpls.rancherBalancer
-    .split('{{balancerName}}').join(argv.b)
+  yamls.rancherBalancerNew = yamls.rancherBalancerNew.concat(
+    yamls.rancherServiceOld,
+    yamls.rancherServiceNew
   );
 
-  console.info('New docker compose:\n', yamls.dockerService);
-  console.info('new rancher compose:\n', yamls.rancherService);
+  yamls.dockerBalancerOld = yamls.dockerBalancerOld.concat(
+    yamls.dockerServiceNew
+  );
+  yamls.rancherBalancerOld = yamls.rancherBalancerOld.concat(
+    yamls.rancherServiceNew
+  );
+
+  delete yamls.dockerServiceOld;
+
+  console.info('New docker compose:\n', yamls.dockerServiceNew);
+  console.info('New rancher compose:\n', yamls.rancherServiceNew);
 
   console.info('Creating service with new version');
   return Promise.resolve();
 })
-.then(() => composeBindings.updateStack(yamls.dockerService, yamls.rancherService))
+.then(() => composeBindings.updateStack(yamls.dockerServiceNew, yamls.rancherServiceNew))
 .then((updatedStack) => {
   console.info('Stack updated with new version. Waiting to become healthy');
   stack = updatedStack;
@@ -153,7 +172,7 @@ api.getStack(argv.env, argv.s)
   return promiseWhile(
     () => stack.healthState !== 'healthy' && timeout > 0,
     () => Bluebird.delay(5000)
-    .then(() =>api.getStack(argv.env, argv.s))
+    .then(() => api.getStack(argv.environment, argv.service))
     .then((s) => {
       stack = s;
       timeout -= 5000;
@@ -175,7 +194,7 @@ api.getStack(argv.env, argv.s)
   return promiseWhile(
     () => stack.healthState !== 'healthy' && timeout > 0,
     () => Bluebird.delay(2000)
-    .then(() =>api.getStack(argv.env, argv.s))
+    .then(() => api.getStack(argv.environment, argv.service))
     .then((s) => {
       stack = s;
       timeout -= 2000;
@@ -195,7 +214,7 @@ api.getStack(argv.env, argv.s)
 })
 .then(() => api.removeService(oldService))
 .then(() => {
-  console.log(`Successfully upgraded to ${argv.v}.`);
+  console.log(`Successfully upgraded to ${argv.version}.`);
   composeBindings.cleanup();
 })
 .catch(err => {
@@ -206,14 +225,14 @@ api.getStack(argv.env, argv.s)
 
   console.error(err.message);
   console.info('Reverting load balancer back to old service');
-  composeBindings.updateStack(yaml.dockerBalancerOld, yaml.rancherBalancerOld)
+  composeBindings.updateStack(yamls.dockerBalancerOld, yamls.rancherBalancerOld)
   .then((updatedStack) => {
     stack = updatedStack;
     let timeout = 60000;
     return promiseWhile(
       () => stack.healthState !== 'healthy' && timeout > 0,
       () => Bluebird.delay(2000)
-      .then(() => api.getStack(argv.env, argv.s))
+      .then(() => api.getStack(argv.environment, argv.service))
       .then((s) => {
         stack = s;
         timeout -= 2000;
@@ -225,7 +244,7 @@ api.getStack(argv.env, argv.s)
       throw new Error('Could not revert to old load balancer. PANIC!');
     }
 
-    throw new Error(`Could not upgrade to ${argv.s}-${argv.v}.`);
+    throw new Error(`Could not upgrade to version ${argv.version}. Please review rancher server.`);
   })
   .catch((error) => {
     throw error;

@@ -1,5 +1,5 @@
-{{balancerName}}:
-  scale: 1
+{{balancer}}:
+  scale: 2
   load_balancer_config:
     haproxy_config: {}
   health_check:
