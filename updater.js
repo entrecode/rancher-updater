@@ -25,39 +25,6 @@ function promiseWhile(condition, action) {
   return resolver.promise;
 }
 
-argv.serviceName = `${argv.service}-${argv.version.split('.').join('-')}`;
-if (argv.build) {
-  argv.serviceName += `-build-${argv.build}`;
-}
-
-if (argv.env) {
-  if (!Array.isArray(argv.env)) {
-    argv.env = [argv.env];
-  }
-
-  const envObj = {};
-  argv.env.map((env) => {
-    if (env.indexOf('=') === -1) {
-      console.error('Environment variables need to be in the format key=value');
-      process.exit(1);
-    }
-    const split = env.split('=');
-    envObj[split[0]] = split[1];
-    return envObj;
-  });
-  argv.e = argv.env = envObj;
-}
-
-argv.accessKey = argv.accessKey || process.env.RANCHER_ACCESS_KEY;
-argv.secretKey = argv.secretKey || process.env.RANCHER_SECRET_KEY;
-
-if (!argv.accessKey || !argv.secretKey) {
-  console.error('Please provide access key and secret key\n');
-  process.exit(1);
-} else {
-  console.info(`Using access key ${argv.accessKey}\n`);
-}
-
 api.init(argv.accessKey, argv.secretKey);
 
 const tpls = {
