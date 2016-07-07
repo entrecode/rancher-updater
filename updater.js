@@ -118,7 +118,7 @@ api.getStack(argv.environment, argv.service)
   // new
   for (let file in tpls) {
     if (tpls.hasOwnProperty(file)) {
-      const template = handlebars.compile(tpls[file]);
+      const template = handlebars.compile(tpls[file], { strict: true });
       yamls[`${file}New`] = template(argv);
     }
   }
