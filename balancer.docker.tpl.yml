@@ -1,0 +1,10 @@
+{{balancer}}:
+  expose:
+  - {{port}}:{{port}}
+  labels:
+    io.rancher.scheduler.affinity:container_label_soft_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
+  tty: true
+  image: rancher/load-balancer-service
+  links:
+  - {{serviceName}}:{{serviceName}}
+  stdin_open: true

@@ -1,0 +1,12 @@
+{{serviceName}}:
+  environment:
+    NODE_ENV: stage
+  {{#each env}}
+    {{@key}}: {{this}}
+  {{/each}}
+  labels:
+    io.rancher.container.pull_image: always
+    io.rancher.scheduler.affinity:container_label_soft_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
+  tty: true
+  image: docker.entrecode.de/accountsrv:{{version}}
+  stdin_open: true
