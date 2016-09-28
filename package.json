@@ -1,6 +1,6 @@
 {
   "name": "ec.rancher-blue-green-deploy",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Blue-Green deployment for rancher with zero downtime. By entrecode.",
   "main": "index.js",
   "scripts": {
