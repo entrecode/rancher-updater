@@ -1,7 +1,7 @@
 {{serviceName}}:
+  scale: 2
   upgrade_strategy:
     start_first: true
-  scale: 1
   health_check:
     port: {{port}}
     interval: 5000

@@ -139,76 +139,7 @@ This is a simple example of a service only template:
   scale: 2
 ```
 
-A more advanced example with load balancer:
-
-**service.docker.tpl.yml**
-
-```yaml
-{{serviceName}}:
-{{#if env}}
-  environment:
-  {{#each env}}
-    {{@key}}: {{this}}
-  {{/each}}
-{{/if}}
-  labels:
-    io.rancher.scheduler.affinity:container_label_soft_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
-    io.rancher.container.pull_image: always
-  tty: true
-  image: docker.entrecode.de/{{service}}:{{version}}
-  stdin_open: true
-```
-
-**service.rancher.tpl.yml**
-
-```yaml
-{{serviceName}}:
-  scale: 2
-  upgrade_strategy:
-    start_first: true
-  health_check:
-    port: {{port}}
-    interval: 5000
-    recreate_on_quorum_strategy_config:
-      quorum: 1
-    initializing_timeout: 60000
-    unhealthy_threshold: 3
-    strategy: recreateOnQuorum
-    response_timeout: 1000
-    request_line: GET "/health" "HTTP/1.0"
-    healthy_threshold: 2
-```
-
-**balancer.docker.tpl.yml**
-
-```yaml
-{{balancer}}:
-  labels:
-    io.rancher.scheduler.affinity:container_label_soft_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
-  expose:
-  - {{port}}:{{port}}
-  tty: true
-  image: rancher/load-balancer-service
-  links:
-  - {{serviceName}}:{{serviceName}}
-  stdin_open: true
-```
-
-**balancer.rancher.tpl.yml**
-
-```yaml
-{{balancer}}:
-  scale: 2
-  load_balancer_config:
-    haproxy_config: {}
-  health_check:
-    port: 42
-    interval: 2000
-    unhealthy_threshold: 3
-    strategy: recreate
-    response_timeout: 2000
-    healthy_threshold: 2
-```
+A more advanced example with load balancer is in `./examples`.
 
 When the templates are rendered rancher updater uses strict mode, so if your specify a variable which is not available in the command line parameters it will fail. See commandline tool description for additional info.
 
