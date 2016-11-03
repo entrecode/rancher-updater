@@ -1,26 +1,29 @@
 {
-  "name": "ec.rancher-blue-green-deploy",
+  "name": "ec.rancher-updater",
   "version": "0.1.7",
   "description": "Blue-Green deployment for rancher with zero downtime. By entrecode.",
-  "main": "index.js",
+  "main": "updater.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "https://scherzinger@stash.entrecode.de/scm/node/ec.rancher-blue-green-deploy.git"
+    "url": "git@github.com:entrecode/rancher-updater.git"
   },
   "keywords": [
-    "rancher"
+    "rancher",
+    "update",
+    "deployment",
+    "blue-green"
   ],
   "author": "Simon Scherzinger <scherzinger@entrecode.de>",
   "license": "ISC",
   "dependencies": {
-    "bluebird": "^3.4.1",
+    "bluebird": "^3.4.6",
     "handlebars": "^4.0.5",
-    "tmp": "0.0.28",
-    "traverson": "^3.1.3",
-    "yargs": "^4.7.1"
+    "tmp": "0.0.30",
+    "traverson": "^3.2.0",
+    "yargs": "^4.8.1"
   },
   "bin": {
     "rancher-updater": "updater.js"
