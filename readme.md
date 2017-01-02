@@ -35,6 +35,7 @@ rancher-updater -s app -v 0.0.1 -m initBalanced
 | --environment      | String  | 1a45                       | The id of environment which should be updated. Defaults to cachena. |
 | --service, -s      | String  |                            | The service name which should be updated. |
 | --stack            | String  |                            | Additional stack name to append to `--service`. |
+| --stackName        | String  |                            | Replaces stack name completely. |
 | --image, -i        | String  |                            | Overwrite docker image name. |
 | --mode, -m         | String  | balanced                   | The updater mode (one of `balanced`, `init`, `initBalanced`, and `service`). |
 | --version, -v      | String  |                            | The version tag to which you want to update. |
