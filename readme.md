@@ -7,7 +7,7 @@ This provides `rancher-updater` which is a commandline tool to do blue-green sty
 Make sure you have installed `rancher-compose` from Rancher. Then all you have to do is:
 
 ```sh
-npm install -g racher-updater
+npm install -g rancher-updater
 ```
 
 ## Usage
