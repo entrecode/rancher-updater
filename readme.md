@@ -7,7 +7,7 @@ This provides `rancher-updater` which is a commandline tool to do blue-green sty
 Make sure you have installed `rancher-compose` from Rancher. Then all you have to do is:
 
 ```sh
-npm install -g racher-updater
+npm install -g rancher-updater
 ```
 
 ## Usage
@@ -19,12 +19,13 @@ Rancher updater requires serveral assumptions for your Rancher setup. These are 
 rancher-updater -h
 
 # update webapp to version 5.0.3 build 4
-rancher-updater -s webapp -v 5.0.3 --build 4
+rancher-updater --url https://myrancher.example.com -s webapp -v 5.0.3 --build 4
 
 # update worker to version 0.12.0-dev
-rancher-updater -s worker -v 0.12.0-dev -m service
+rancher-updater --url https://myrancher.example.com -s worker -v 0.12.0-dev -m service
 
 # create app with version 0.0.1
+export RANCHER_URL=https://myrancher.example.com
 rancher-updater -s app -v 0.0.1 -m initBalanced
 ```
 

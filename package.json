@@ -1,6 +1,6 @@
 {
   "name": "rancher-updater",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Blue-Green deployment for rancher with zero downtime. By entrecode.",
   "main": "updater.js",
   "scripts": {
