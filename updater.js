@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-'use strict';
 
 const argv = require('./lib/argv');
 const init = require('./lib/init');
