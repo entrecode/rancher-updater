@@ -29,33 +29,6 @@ export RANCHER_URL=https://myrancher.example.com
 rancher-updater -s app -v 0.0.1 -m initBalanced
 ```
 
-| Name               | Type    | Default                    | Description |
-| ------------------ | ------- | -------------------------- | ----------- |
-| --balancer         | String  | lb                         | The name of the load balancer service. |
-| --force, -f        | Boolean |                            | Skip sanity check of NODE_ENV and environment id. |
-| --environment      | String  | 1a45                       | The id of environment which should be updated. Defaults to cachena. |
-| --service, -s      | String  |                            | The service name which should be updated. |
-| --stack            | String  |                            | Additional stack name to append to `--service`. |
-| --stackName        | String  |                            | Replaces stack name completely. |
-| --image, -i        | String  |                            | Overwrite docker image name. |
-| --mode, -m         | String  | balanced                   | The updater mode (one of `balanced`, `init`, `initBalanced`, and `service`). |
-| --version, -v      | String  |                            | The version tag to which you want to update. |
-| --port, -p         | Integer |                            | The service port. |
-| --build            | String  |                            | Build number to add to service name. Allows redeploy of same version. |
-| --timeout, -t      | Integer | 60000                      | Timeout in ms for health checks. |
-| --env, -e          | String  |                            | Additional environment variables. Process environment variables prefixed with `DEPLOY_ENV_` will be respected as well. Must be in the format `KEY=someValue` |
-| --docker-service   | String  | ./service.docker.tpl.yml   | Path to docker-compose template for the service. |
-| --rancher-service  | String  | ./service.rancher.tpl.yml  | Path to rancher-compose template for the service. |
-| --docker-balancer  | String  | ./balancer.docker.tpl.yml  | Path to docker-compose template for the load balancer. |
-| --rancher-balancer | String  | ./balancer.rancher.tpl.yml | Path to rancher-compose template for the load balancer. |
-| --access-key       | String  |                            | The API access key. Environment variable: RANCHER_ACCESS_KEY |
-| --secret-key       | String  |                            | The API secret key. Environment variable: RANCHER_SECRET_KEY |
-
-You can also use process environment variables prefixed with `DEPLOY_` for any
-additional variables not covered by commandline arguments.
-
-
-
 #### Environments and Stacks
 Rancher updater supports multiple environments and stacks.
 
