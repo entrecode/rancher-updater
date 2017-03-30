@@ -1,15 +1,14 @@
 {{serviceName}}:
   scale: 2
-  upgrade_strategy:
-    start_first: true
+  start_on_create: true
   health_check:
-    port: {{port}}
-    interval: 5000
+    healthy_threshold: 2
+    response_timeout: 1000
     recreate_on_quorum_strategy_config:
       quorum: 1
-    initializing_timeout: 60000
+    port: 7777
     unhealthy_threshold: 3
+    initializing_timeout: 60000
+    interval: 5000
     strategy: recreateOnQuorum
-    response_timeout: 1000
     request_line: GET "/health" "HTTP/1.0"
-    healthy_threshold: 2

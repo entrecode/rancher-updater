@@ -1,13 +1,14 @@
 {{serviceName}}:
-{{#if env}}
-  environment:
-  {{#each env}}
-    {{@key}}: {{this}}
-  {{/each}}
-{{/if}}
-  labels:
-    io.rancher.scheduler.affinity:container_label_soft_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
-    io.rancher.container.pull_image: always
-  tty: true
   image: docker.entrecode.de/{{service}}:{{version}}
+  {{#if env}}
+  environment:
+    {{#each env}}
+    {{@key}}: {{this}}
+    {{/each}}
+  {{/if}}
   stdin_open: true
+  tty: true
+  labels:
+    io.rancher.container.pull_image: always
+    io.rancher.scheduler.affinity:container_label_soft_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
+  

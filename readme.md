@@ -2,6 +2,10 @@
 
 This provides `rancher-updater` which is a commandline tool to do blue-green style deployments in [Rancher](http://rancher.com/rancher/).
 
+> Since version 0.4.0 rancher-updater will use the rancher api v2-beta and compose version 2 syntax.
+> 
+> Note that the temlates should be only services without the wrapping `services:` key in yaml. If this does not suit your use case PRs are welcome. :)
+
 ## Installation
 
 Make sure you have installed `rancher-compose` from Rancher. Then all you have to do is:

@@ -1,11 +1,21 @@
 {{balancer}}:
-  scale: 2
+  scale: 1
+  start_on_create: true
+  lb_config:
+    certs: []
+    port_rules:
+    - hostname: ''
+      path: ''
+      protocol: http
+      service: {{serviceName}}
+      source_port: 7777
+      target_port: 7777
   load_balancer_config:
     haproxy_config: {}
   health_check:
-    port: 42
-    interval: 2000
-    unhealthy_threshold: 3
-    strategy: recreate
-    response_timeout: 2000
     healthy_threshold: 2
+    response_timeout: 2000
+    port: 42
+    unhealthy_threshold: 3
+    interval: 2000
+    strategy: recreate

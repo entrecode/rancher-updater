@@ -1,6 +1,6 @@
 {
   "name": "rancher-updater",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "Blue-Green deployment for rancher with zero downtime. By entrecode.",
   "main": "updater.js",
   "scripts": {
@@ -21,6 +21,7 @@
   "dependencies": {
     "bluebird": "^3.4.6",
     "handlebars": "^4.0.5",
+    "js-yaml": "^3.8.2",
     "tmp": "0.0.30",
     "traverson": "^3.2.0",
     "yargs": "^4.8.1"
