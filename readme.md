@@ -3,7 +3,7 @@
 This provides `rancher-updater` which is a commandline tool to do blue-green style deployments in [Rancher](http://rancher.com/rancher/).
 
 > Since version 0.4.0 rancher-updater will use the rancher api v2-beta and compose version 2 syntax.
-> 
+>
 > Note that the temlates should be only services without the wrapping `services:` key in yaml. If this does not suit your use case PRs are welcome. :)
 
 ## Installation
@@ -15,9 +15,11 @@ npm install -g rancher-updater
 ```
 
 ## Usage
+
 Rancher updater requires serveral assumptions for your Rancher setup. These are important to understand befor using Rancher updater. Also you need to be familiar with `docker-compose` and `rancher-compose` file format, since it will be used in addition to [handlebars](http://handlebarsjs.com/).
 
 #### Commandline tool
+
 ```sh
 # show help
 rancher-updater -h
@@ -34,6 +36,7 @@ rancher-updater -s app -v 0.0.1 -m initBalanced
 ```
 
 #### Environments and Stacks
+
 Rancher updater supports multiple environments and stacks.
 
 For any environment you will need to get an access key (`--access-key`) and secret key (`--secret-key`) tied to a specific environment (`--environment`.
@@ -42,16 +45,17 @@ Stack names are tightly coupled to service names. Imagine you want to deploy a s
 
 * Stack name should be `ec-api`
 * service name should be `ec-api-$major-$minor-$patch[-build-$build]`.
-	* for version `0.11.5-dev` it would be `ec-api-0-11-5-dev`
-	* for `5.1.0 build 5` `ec-api-5-1-0-build-5`.
+    * for version `0.11.5-dev` it would be `ec-api-0-11-5-dev`
+    * for `5.1.0 build 5` `ec-api-5-1-0-build-5`.
 * Docker image name and tag should be `ec-api:$major.$minor.$patch`
-	* for version `0.11.5-dev`it would be `ec-api:0.11.5-dev`
-	* for `5.1.0 build 5` it would be `ec-api:5.1.0`
+    * for version `0.11.5-dev`it would be `ec-api:0.11.5-dev`
+    * for `5.1.0 build 5` it would be `ec-api:5.1.0`
 
 The build number (`--build`) only applies to the service name (`--service`) and is not considered part of the docker image tag. Dots in the version (`--version`) are replaced by hyphens.
 
 #### Modes
-There are two main update modes, `service` and `balanced`.
+
+There are three main update modes, `service`, `balanced` and `inplace`.
 
 * `balanced`
 
@@ -82,6 +86,20 @@ There are two main update modes, `service` and `balanced`.
 	* Delete old service
 
 Each mode has its accompaning init mode, `init` and `initBalanced`. The init modes can be used to create the stack according to your configuration.
+
+* `inplace`
+
+	This will update the service in 'Rancher'-Style update-commit-rollback manner. Use this mode if your service does not relies on balancer and is linked with other services directly. When updating a service inplace following steps are executed in order:
+
+	* Check initial stack health
+	* Check service to be updated
+	* Print old config
+	* Load and render templates
+	* Update Service
+	* Check service ggot  healthy
+	* Await for health for defined time period
+	* Commit Service Update
+	* ON ERROR: Rollback Service Update
 
 #### Templates
 
@@ -123,4 +141,5 @@ A more advanced example with load balancer is in `./examples`.
 When the templates are rendered rancher updater uses strict mode, so if your specify a variable which is not available in the command line parameters it will fail. See commandline tool description for additional info.
 
 ## TODOs
+
 * build number and additional stack name: clean invalid characters.
