@@ -115,12 +115,12 @@ This is a simple example of a service only template:
 
 ```yaml
 {{serviceName}}:
-  scale: 2
+  scale: {{scale}}
 ```
 
 A more advanced example with load balancer is in `./examples`.
 
-When the templates are rendered rancher updater uses strict mode, so if your specify a variable which is not available in the command line parameters it will fail. See commandline tool description for additional info.
+When the templates are rendered rancher updater uses strict mode, so if your specify a variable which is not available in the command line parameters it will fail. See commandline tool description for additional info. As shown above you can use `scale` as variable. This defaults to `2` but will later be updated by the existing service which you want to upgrade.
 
 ## TODOs
 * build number and additional stack name: clean invalid characters.
